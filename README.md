@@ -2,3 +2,5 @@
 
 По адресу http://localhost изучите фронтенд веб-приложения, а по адресу http://localhost/api/docs/ — спецификацию API.
 
+Для добавления тэгов в дериктории с файлом manage.py введите в командную строку: "python manage.py create_tags"
+Для добавления ингредиентов в дериктории с файлом manage.py введите в командную строку: "python manage.py add_ingredients"
