@@ -1,3 +1,4 @@
+import pyshorteners
 from django.shortcuts import get_object_or_404
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from djoser.views import UserViewSet
@@ -288,5 +289,7 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
                 {'error': 'Несуществующий рецепт'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        short_link = f'https://foodgram.example.org/{pk}'
-        return Response({'short_link': short_link}, status=status.HTTP_200_OK)
+        original_link = request.build_absolute_uri(f'/api/recipes/{pk}/')
+        s = pyshorteners.Shortener()
+        short_link = s.tinyurl.short(original_link)
+        return Response({'short-link': short_link}, status=status.HTTP_200_OK)
