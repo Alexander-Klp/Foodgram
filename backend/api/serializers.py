@@ -1,5 +1,4 @@
 import base64
-import webcolors
 
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
@@ -29,18 +28,6 @@ class Base64ImageField(serializers.ImageField):
         raise serializers.ValidationError('Не правильный формат изображения')
 
 
-# class Hex2NameColor(serializers.Field):
-#     def to_representation(self, value):
-#         return value
-
-#     def to_internal_value(self, data):
-#         try:
-#             data = webcolors.hex_to_name(data)
-#         except ValueError:
-#             raise serializers.ValidationError('Для этого цвета нет имени')
-#         return data
-
-
 class CustomUserCreateSerializer(UserCreateSerializer):
     """
     Сериализатор создания кастомного пользователя.
@@ -57,12 +44,14 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
     class Meta:
         model = User
-        fields = ('id',
-                  'username',
-                  'email',
-                  'first_name',
-                  'last_name',
-                  'password')
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'password'
+        )
 
 
 class CustomUserSerializer(UserSerializer):
@@ -74,14 +63,16 @@ class CustomUserSerializer(UserSerializer):
 
     class Meta:
         model = User
-        fields = ('id',
-                  'username',
-                  'email',
-                  'first_name',
-                  'last_name',
-                  'is_subscribed',
-                  'avatar')
-   
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'avatar'
+        )
+
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
@@ -163,16 +154,18 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id',
-                  'tags',
-                  'author',
-                  'ingredients',
-                  'is_favorited',
-                  'is_in_shopping_cart',
-                  'name',
-                  'image',
-                  'text',
-                  'cooking_time')
+        fields = (
+            'id',
+            'tags',
+            'author',
+            'ingredients',
+            'is_favorited',
+            'is_in_shopping_cart',
+            'name',
+            'image',
+            'text',
+            'cooking_time'
+        )
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
@@ -205,16 +198,18 @@ class RecipeCreateSerializer(RecipeSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id',
-                  'author',
-                  'tags',
-                  'is_favorited',
-                  'is_in_shopping_cart',
-                  'ingredients',
-                  'name',
-                  'image',
-                  'text',
-                  'cooking_time')
+        fields = (
+            'id',
+            'author',
+            'tags',
+            'is_favorited',
+            'is_in_shopping_cart',
+            'ingredients',
+            'name',
+            'image',
+            'text',
+            'cooking_time'
+        )
         
     def to_representation(self, obj):
         self.fields.pop('ingredients')
@@ -321,24 +316,27 @@ class SubscribeSerializer(CustomUserSerializer):
     recipes_count = serializers.SerializerMethodField()
 
     class Meta(CustomUserSerializer.Meta):
-        fields = ('email',
-                  'id',
-                  'username',
-                  'first_name',
-                  'last_name',
-                  'is_subscribed',
-                  'recipes',
-                  "recipes_count"
-                  )
-        read_only_fields = ('email',
-                            'id',
-                            'username',
-                            'first_name',
-                            'last_name',
-                            'is_subscribed',
-                            'recipes',
-                            "recipes_count"
-                            )
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count',
+            'avatar',
+        )
+        read_only_fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count'
+        )
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj).count()

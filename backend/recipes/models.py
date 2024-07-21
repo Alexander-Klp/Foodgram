@@ -69,12 +69,12 @@ class Recipe(models.Model):
         help_text='Время приготовления в минутах'
     )
     is_favorited = GenericRelation('Favorite')
-    is_in_shopping_cart = models.BooleanField(
-        'is_in_shopping_cart',
-        blank=True,
-        null=True,
-        default=False
-    )
+    # is_in_shopping_cart = models.BooleanField(
+    #     'is_in_shopping_cart',
+    #     blank=True,
+    #     null=True,
+    #     default=False
+    # )
 
     def __str__(self):
         return self.name
@@ -118,11 +118,13 @@ class Favorite(models.Model):
 class ShoppingCart(models.Model):
     user = models.ForeignKey(
         User,
+        related_name='shopping_cart',
         on_delete=models.CASCADE,
         verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
+        related_name='shopping_cart',
         on_delete=models.CASCADE,
         verbose_name='Рецепт'
     )

@@ -1,6 +1,9 @@
 import pyshorteners
 from django.shortcuts import get_object_or_404
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from djoser.views import UserViewSet
 from recipes.models import (
     Tag,
@@ -12,25 +15,23 @@ from recipes.models import (
 )
 from users.models import User
 from api.serializers import (
-    CustomUserCreateSerializer,
     TagSerializer,
     IngredientSerializer,
     RecipeSerializer,
     SubscribeSerializer,
     CustomUserSerializer,
     FavoriteRecipeSerializer,
-    ShoppingCartSerializer,
     RecipeSubscriptionSerializer,
     RecipeCreateSerializer
 )
 from rest_framework.response import Response
-from rest_framework import status, viewsets, filters, permissions
+from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
 
 from django_filters.rest_framework import DjangoFilterBackend
 
 from api.filters import IngredientFilter, RecipeFilter
-
+from api.permissions import AuthorOrReadOnly
 
 from django.contrib.contenttypes.models import ContentType
 from django.http import Http404
@@ -38,10 +39,10 @@ from django.http import Http404
 
 class ManageFavorite:
     @action(
-      detail=True,
-      methods=['post', 'delete'],
-      url_path='favorite',
-      permission_classes=[IsAuthenticated, ]
+        detail=True,
+        methods=['post', 'delete'],
+        url_path='favorite',
+        permission_classes=[IsAuthenticated, ]
     )
     def favorite(self, request, pk):
         try:
@@ -49,7 +50,7 @@ class ManageFavorite:
         except Http404:
             return Response(
                 {'error': 'Рецепт не найден'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_404_NOT_FOUND
             )
         instance = self.get_object()
         favorite_obj = None
@@ -187,7 +188,10 @@ class UsersViewSet(UserViewSet):
             )
             if serializer.is_valid():
                 serializer.save()
-                return Response({'avatar': serializer.data['avatar']}, status=status.HTTP_200_OK)
+                return Response(
+                    {'avatar': serializer.data['avatar']},
+                    status=status.HTTP_200_OK
+                )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         elif request.method == 'DELETE':
             user.avatar.delete()
@@ -220,6 +224,11 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
         if self.action in ('create', 'update', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeSerializer
+    
+    def get_permissions(self):
+        if self.action in ['update', 'partial_update']:
+            self.permission_classes = (AuthorOrReadOnly,)
+        return super().get_permissions()
 
     @action(detail=False,
             methods=['get'],
@@ -243,8 +252,8 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
                 recipe = Recipe.objects.get(id=pk)
             except Recipe.DoesNotExist:
                 return Response(
-                    {'error': 'Несуществующий рецепт'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {'error': 'Нет такого рецепта'},
+                    status=status.HTTP_404_NOT_FOUND
                 )
             if ShoppingCart.objects.filter(
                 user=request.user,
