@@ -73,18 +73,15 @@ class ManageFavorite:
                 status=status.HTTP_400_BAD_REQUEST
             )
         if request.method == 'DELETE':
-            favorite_obj = get_object_or_404(
-                Favorite,
-                user=request.user,
-                content_type=content_type,
-                object_id=instance.id
-            )
-            if favorite_obj:
-                favorite_obj.delete()
-                return Response(
-                    status=status.HTTP_204_NO_CONTENT
+            try:
+                favorite_obj = Favorite.objects.get(
+                    user=request.user,
+                    content_type=content_type,
+                    object_id=instance.id
                 )
-            else:
+                favorite_obj.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            except Favorite.DoesNotExist:
                 return Response(
                     {'error': 'Рецепт не находится в избранном'},
                     status=status.HTTP_400_BAD_REQUEST

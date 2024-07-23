@@ -71,7 +71,6 @@ class IngredientAdmin(admin.ModelAdmin):
 class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
     fields = ('ingredient', 'amount')
-    readonly_fields = ('amount',)
     extra = 0
 
 

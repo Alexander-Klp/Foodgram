@@ -94,7 +94,7 @@ class RecipeIngredient(models.Model):
 
     class Meta:
         verbose_name = 'Игредиент для рецепта'
-        verbose_name_plural = 'Игредиенты для рецептов'
+        verbose_name_plural = 'Игредиенты для рецепта'
 
 
 class Favorite(models.Model):
