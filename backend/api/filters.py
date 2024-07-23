@@ -1,11 +1,11 @@
 from django.db.models import Exists, OuterRef
+from django.contrib.contenttypes.models import ContentType
 from django_filters.rest_framework import (
     CharFilter,
     FilterSet,
     ModelMultipleChoiceFilter,
     BooleanFilter,
 )
-# from django_filters import FilterSet, CharFilter, ModelMultipleChoiceFilter, BooleanFilter
 from recipes.models import Ingredient, Recipe, Tag, Favorite
 
 
@@ -43,22 +43,14 @@ class RecipeFilter(FilterSet):
         return queryset.none()
 
     def filter_is_favorited(self, queryset, name, value):
-        user = self.request.user  # Assuming you have access to the request object
-        if not user.is_authenticated:
-            return queryset  # If the user is not authenticated, return the original queryset
-
-        if value:
-            return queryset.annotate(
-                favorited=Exists(Favorite.objects.filter(
-                    content_type__model='recipe',  # Ensure this matches your ContentType model name
-                    object_id=OuterRef('pk'),
-                    user=user
-                ))
-            ).filter(favorited=True)
-        return queryset.annotate(
-            favorited=Exists(Favorite.objects.filter(
-                content_type__model='recipe',  # Ensure this matches your ContentType model name
-                object_id=OuterRef('pk'),
-                user=user
-            ))
-        ).filter(favorited=False)
+        user = self.request.user
+        if user.is_authenticated:
+            if value:
+                favorite_content_type = ContentType.objects.get_for_model(Recipe)
+                favorited_recipes = Favorite.objects.filter(
+                    user=user,
+                    content_type=favorite_content_type
+                ).values_list('object_id', flat=True)
+                return queryset.filter(id__in=favorited_recipes)
+            return queryset.exclude(id__in=favorited_recipes)
+        return queryset.none()

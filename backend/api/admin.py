@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django import forms
 from django.contrib.contenttypes.models import ContentType
 from recipes.models import (
     Tag,
@@ -23,12 +24,30 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     search_fields = ('recipe',)
 
 
+class FavoriteAdminForm(forms.ModelForm):
+    content_object = forms.ModelChoiceField(queryset=Recipe.objects.all(), label='Recipe')
+
+    class Meta:
+        model = Favorite
+        fields = ('user', 'content_type', 'content_object')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.initial['content_object'] = self.instance.content_object
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.content_type = ContentType.objects.get_for_model(self.cleaned_data['content_object'])
+        instance.object_id = self.cleaned_data['content_object'].id
+        if commit:
+            instance.save()
+        return instance
+
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
-    list_display = ('user',
-                    'content_type',
-                    'object_id',
-                    'content_object')
+    form = FavoriteAdminForm
+    list_display = ('user', 'content_type', 'object_id', 'content_object')
     
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'content_type':
