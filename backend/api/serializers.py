@@ -1,21 +1,22 @@
 import base64
 
-from djoser.serializers import UserCreateSerializer, UserSerializer
-from rest_framework import serializers
-from django.contrib.contenttypes.models import ContentType
-from django.core.files.base import ContentFile
 from collections import Counter
 
-from users.models import User
+from django.contrib.contenttypes.models import ContentType
+from django.core.files.base import ContentFile
+from djoser.serializers import UserCreateSerializer, UserSerializer
+from rest_framework import serializers
+
 from recipes.models import (
-    Tag,
+    Favorite,
     Ingredient,
     Recipe,
-    Favorite,
     RecipeIngredient,
     ShoppingCart,
-    Subscribe
+    Subscribe,
+    Tag,
 )
+from users.models import User
 
 
 class Base64ImageField(serializers.ImageField):
@@ -210,7 +211,7 @@ class RecipeCreateSerializer(RecipeSerializer):
             'text',
             'cooking_time'
         )
-        
+
     def to_representation(self, obj):
         self.fields.pop('ingredients')
         representation = super().to_representation(obj)
@@ -221,7 +222,7 @@ class RecipeCreateSerializer(RecipeSerializer):
         tags_representation = TagSerializer(tags, many=True).data
         representation['tags'] = tags_representation
         return representation
-    
+
     def validate(self, data):
         # Если нет ингредиентов
         if not data.get('ingredients'):
@@ -236,17 +237,20 @@ class RecipeCreateSerializer(RecipeSerializer):
             )
         # Дубликаты игредиентов
         ingredients_data = data.get('ingredients', [])
-        ingredient_ids = [ingredient['id'].id for ingredient in ingredients_data]
+        ingredient_ids = [
+            ingredient['id'].id
+            for ingredient in ingredients_data
+        ]
         ingredient_counts = Counter(ingredient_ids)
         for count_ingr in ingredient_counts.values():
             if count_ingr > 1:
-                raise serializers.ValidationError("Ингредиенты дублируются.")
+                raise serializers.ValidationError('Ингредиенты дублируются.')
         # Дубликаты тегов
         tags_data = data.get('tags', [])
         tags_count = Counter(tags_data)
         for count_tags in tags_count.values():
             if count_tags > 1:
-                raise serializers.ValidationError("Тэги дублируются.")
+                raise serializers.ValidationError('Тэги дублируются.')
         return data
 
     def create(self, validated_data):
@@ -270,7 +274,9 @@ class RecipeCreateSerializer(RecipeSerializer):
         instance.name = validated_data.get('name', instance.name)
         instance.image = validated_data.get('image', instance.image)
         instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get('cooking_time', instance.cooking_time)
+        instance.cooking_time = validated_data.get(
+            'cooking_time', instance.cooking_time
+        )
 
         RecipeIngredient.objects.filter(recipe=instance).delete()
         ingredients_data = validated_data.pop('ingredients')

@@ -1,15 +1,18 @@
-from django.db import models
-from django.core.validators import RegexValidator
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes.fields import GenericRelation
+from django.core.validators import RegexValidator
+from django.db import models
 
 from users.models import User
 
-
 slug_validator = RegexValidator(
     regex=r'^[-a-zA-Z0-9_]+$',
-    message='Слаг должен состоять только из букв, цифр, знаков подчеркивания или тире.'
+    message="""
+    Слаг должен состоять только из букв, цифр, знаков подчеркивания или тире.
+    """
 )
 
 
@@ -165,7 +168,7 @@ class Subscribe(models.Model):
         related_name='subscribed_to',
         verbose_name='Подписан на'
     )
-    
+
     def __str__(self):
         return (f'{self.subscriber.username}'
                 f'подписан на {self.subscribed_to.username}')

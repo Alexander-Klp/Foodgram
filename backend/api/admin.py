@@ -1,14 +1,15 @@
-from django.contrib import admin
 from django import forms
+from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
+
 from recipes.models import (
-    Tag,
-    Recipe,
-    Ingredient,
     Favorite,
+    Ingredient,
+    Recipe,
     RecipeIngredient,
     ShoppingCart,
-    Subscribe
+    Subscribe,
+    Tag,
 )
 
 
@@ -25,7 +26,9 @@ class ShoppingCartAdmin(admin.ModelAdmin):
 
 
 class FavoriteAdminForm(forms.ModelForm):
-    content_object = forms.ModelChoiceField(queryset=Recipe.objects.all(), label='Recipe')
+    content_object = forms.ModelChoiceField(
+        queryset=Recipe.objects.all(), label='Recipe'
+    )
 
     class Meta:
         model = Favorite
@@ -38,21 +41,25 @@ class FavoriteAdminForm(forms.ModelForm):
 
     def save(self, commit=True):
         instance = super().save(commit=False)
-        instance.content_type = ContentType.objects.get_for_model(self.cleaned_data['content_object'])
+        instance.content_type = ContentType.objects.get_for_model(
+            self.cleaned_data['content_object']
+        )
         instance.object_id = self.cleaned_data['content_object'].id
         if commit:
             instance.save()
         return instance
 
+
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
     form = FavoriteAdminForm
     list_display = ('user', 'content_type', 'object_id', 'content_object')
-    
+
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == 'content_type':
             kwargs['queryset'] = ContentType.objects.filter(model='recipe')
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 @admin.register(Tag)
 class TagsAdmin(admin.ModelAdmin):

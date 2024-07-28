@@ -1,40 +1,43 @@
-import pyshorteners
+from django.contrib.contenttypes.models import ContentType
+from django.db.models import Sum
+from django.http import Http404
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import (
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
 )
-from djoser.views import UserViewSet
-from recipes.models import (
-    Tag,
-    Ingredient,
-    Recipe,
-    Favorite,
-    ShoppingCart,
-    Subscribe
-)
-from users.models import User
-from api.serializers import (
-    TagSerializer,
-    IngredientSerializer,
-    RecipeSerializer,
-    SubscribeSerializer,
-    CustomUserSerializer,
-    FavoriteRecipeSerializer,
-    RecipeSubscriptionSerializer,
-    RecipeCreateSerializer
-)
 from rest_framework.response import Response
-from rest_framework import status, viewsets, permissions
-from rest_framework.decorators import action
 
-from django_filters.rest_framework import DjangoFilterBackend
+import pyshorteners
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.permissions import AuthorOrReadOnly
+from api.serializers import (
+    CustomUserSerializer,
+    FavoriteRecipeSerializer,
+    IngredientSerializer,
+    RecipeCreateSerializer,
+    RecipeIngredient,
+    RecipeSerializer,
+    RecipeSubscriptionSerializer,
+    SubscribeSerializer,
+    TagSerializer,
+)
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    ShoppingCart,
+    Subscribe,
+    Tag,
+)
+from users.models import User
 
-from django.contrib.contenttypes.models import ContentType
-from django.http import Http404
+from .create_pdf import generate_shopping_cart_pdf
 
 
 class ManageFavorite:
@@ -46,16 +49,13 @@ class ManageFavorite:
     )
     def favorite(self, request, pk):
         try:
-            instance = self.get_object()
+            instance = self.get_object()  # type: ignore
         except Http404:
             return Response(
                 {'error': 'Рецепт не найден'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        instance = self.get_object()
-        favorite_obj = None
         content_type = ContentType.objects.get_for_model(instance)
-
         if request.method == 'POST':
             favorite_obj, created = Favorite.objects.get_or_create(
                 user=request.user,
@@ -98,7 +98,7 @@ class UsersViewSet(UserViewSet):
         if self.action == 'me':
             return [IsAuthenticated()]
         return super().get_permissions()
-    
+
     @action(detail=False,
             methods=['get'],
             permission_classes=(permissions.IsAuthenticated,),
@@ -164,7 +164,7 @@ class UsersViewSet(UserViewSet):
             )
             subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
+
     @action(detail=False,
             methods=['put', 'patch', 'delete'],
             permission_classes=(permissions.IsAuthenticated,),
@@ -185,25 +185,30 @@ class UsersViewSet(UserViewSet):
             )
             if serializer.is_valid():
                 serializer.save()
+                print(type(serializer.data))
+                avatar_url = serializer.data.get('avatar', '')  # type: ignore
                 return Response(
-                    {'avatar': serializer.data['avatar']},
+                    {'avatar': avatar_url},
                     status=status.HTTP_200_OK
                 )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                serializer.errors,
+                status=status.HTTP_400_BAD_REQUEST
+            )
         elif request.method == 'DELETE':
             user.avatar.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ModelViewSet):
-    http_method_names = ('get')
+    http_method_names = ['get']
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     pagination_class = None
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
-    http_method_names = ('get',)
+    http_method_names = ['get']
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
@@ -221,9 +226,9 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
         if self.action in ('create', 'update', 'partial_update'):
             return RecipeCreateSerializer
         return RecipeSerializer
-    
+
     def get_permissions(self):
-        if self.action in ['update', 'partial_update']:
+        if self.action in ['update', 'partial_update', 'destroy']:
             self.permission_classes = (AuthorOrReadOnly,)
         return super().get_permissions()
 
@@ -233,10 +238,23 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
             url_path='download_shopping_cart',
             )
     def download_shopping_cart(self, request):
-        return Response(
-                    {'message': 'download_shopping_cart'},
-                    status=status.HTTP_200_OK
-                )
+        user = request.user
+        shopping_cart_recipes = Recipe.objects.filter(shopping_cart__user=user)
+
+        if not shopping_cart_recipes.exists():
+            return Response(
+                {'error': 'Нет в корзине рецептов'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__in=shopping_cart_recipes
+        ).values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(total_amount=Sum('amount'))
+
+        return generate_shopping_cart_pdf(ingredients)
 
     @action(detail=True,
             methods=['post', 'delete'],
@@ -283,13 +301,14 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
             )
             in_shopping_cart.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+
     @action(detail=True,
             methods=['get'],
             url_path='get-link',
-            )    
+            )
     def get_link(self, request, pk=None):
         try:
-            recipe = Recipe.objects.get(id=pk)
+            _ = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:
             return Response(
                 {'error': 'Несуществующий рецепт'},

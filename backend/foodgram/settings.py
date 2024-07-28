@@ -1,4 +1,5 @@
 import os
+
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -18,12 +19,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',  # Добавляем REST_FRAMEWORK
-    'users.apps.UsersConfig',  # Добавляем приложуху users
-    'api.apps.ApiConfig',  # Добавляем приложуху api
-    'recipes.apps.RecipesConfig',  # Добавляем приложуху recipes
-    'djoser',  # Добавили для регистрации джозер
-    'rest_framework.authtoken',  # token/login
+    'rest_framework',
+    'users.apps.UsersConfig',
+    'api.apps.ApiConfig',
+    'recipes.apps.RecipesConfig',
+    'djoser',
+    'rest_framework.authtoken',
     'django_filters',
 ]
 
@@ -128,5 +129,3 @@ DJOSER = {
         'user_list': ['rest_framework.permissions.AllowAny'],
     }
 }
-
-

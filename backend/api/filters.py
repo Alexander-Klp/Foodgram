@@ -1,12 +1,12 @@
-from django.db.models import Exists, OuterRef
 from django.contrib.contenttypes.models import ContentType
 from django_filters.rest_framework import (
+    BooleanFilter,
     CharFilter,
     FilterSet,
     ModelMultipleChoiceFilter,
-    BooleanFilter,
 )
-from recipes.models import Ingredient, Recipe, Tag, Favorite
+
+from recipes.models import Favorite, Ingredient, Recipe, Tag
 
 
 class IngredientFilter(FilterSet):
@@ -29,13 +29,13 @@ class RecipeFilter(FilterSet):
     )
     is_in_shopping_cart = BooleanFilter(method='filter_is_in_shopping_cart')
     is_favorited = BooleanFilter(method='filter_is_favorited')
-    
+
     class Meta:
         model = Recipe
         fields = ('author', 'tags', 'is_in_shopping_cart', 'is_favorited')
 
     def filter_is_in_shopping_cart(self, queryset, name, value):
-        user = self.request.user
+        user = self.request.user  # type: ignore
         if user.is_authenticated:
             if value:
                 return queryset.filter(shopping_cart__user=user)
@@ -43,14 +43,14 @@ class RecipeFilter(FilterSet):
         return queryset.none()
 
     def filter_is_favorited(self, queryset, name, value):
-        user = self.request.user
+        user = self.request.user  # type: ignore
         if user.is_authenticated:
+            favorite_content_type = ContentType.objects.get_for_model(Recipe)
+            favorited_recipes = Favorite.objects.filter(
+                user=user,
+                content_type=favorite_content_type
+            ).values_list('object_id', flat=True)
             if value:
-                favorite_content_type = ContentType.objects.get_for_model(Recipe)
-                favorited_recipes = Favorite.objects.filter(
-                    user=user,
-                    content_type=favorite_content_type
-                ).values_list('object_id', flat=True)
                 return queryset.filter(id__in=favorited_recipes)
             return queryset.exclude(id__in=favorited_recipes)
         return queryset.none()
