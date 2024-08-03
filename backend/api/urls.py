@@ -5,7 +5,7 @@ from api.views import (
     IngredientViewSet,
     RecipeViewSet,
     TagViewSet,
-    UsersViewSet
+    UsersViewSet,
 )
 
 router = DefaultRouter()

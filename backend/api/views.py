@@ -1,9 +1,3 @@
-import pyshorteners
-from rest_framework.pagination import (
-    PageNumberPagination,
-    LimitOffsetPagination
-)
-
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
 from django.http import Http404
@@ -17,6 +11,8 @@ from rest_framework.permissions import (
     IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
+
+import pyshorteners
 
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import RecipePagination
