@@ -4,7 +4,7 @@ from django.db import models
 
 class User(AbstractUser):
     """
-    Кастомный пользователь.
+    Моделька пользователя
     """
     username = models.CharField(
         ('Имя пользователя'),

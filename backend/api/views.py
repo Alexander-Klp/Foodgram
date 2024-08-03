@@ -1,3 +1,9 @@
+import pyshorteners
+from rest_framework.pagination import (
+    PageNumberPagination,
+    LimitOffsetPagination
+)
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
 from django.http import Http404
@@ -12,9 +18,8 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 
-import pyshorteners
-
 from api.filters import IngredientFilter, RecipeFilter
+from api.pagination import RecipePagination
 from api.permissions import AuthorOrReadOnly
 from api.serializers import (
     CustomUserSerializer,
@@ -41,6 +46,10 @@ from .create_pdf import generate_shopping_cart_pdf
 
 
 class ManageFavorite:
+    """
+    Класс миксин для добавление или удаления рецепта из "Избранного"
+    эндпоинт api/recipes/{id}/favorite/
+    """
     @action(
         detail=True,
         methods=['post', 'delete'],
@@ -90,7 +99,7 @@ class ManageFavorite:
 
 class UsersViewSet(UserViewSet):
     """
-    ВьюхаСет для эндпоинта users.
+    ViewSet для эндпоинта api/users/
     """
     serializer_class = CustomUserSerializer
 
@@ -105,6 +114,9 @@ class UsersViewSet(UserViewSet):
             url_path='subscriptions',
             )
     def subscriptions(self, request):
+        """
+        Функция для эндпоинта /api/users/subscriptions/
+        """
         user = request.user
         user_subscriptions = Subscribe.objects.filter(subscriber=user)
         subscribed_users = [
@@ -124,6 +136,9 @@ class UsersViewSet(UserViewSet):
             url_path='subscribe',
             )
     def subscribe(self, request, id=None):
+        """
+        Функция для эндпоинта /api/users/{Id}/subscribe/
+        """
         subscribed_to = get_object_or_404(User, id=id)
         if request.method == 'POST':
             if request.user == subscribed_to:
@@ -170,6 +185,9 @@ class UsersViewSet(UserViewSet):
             permission_classes=(permissions.IsAuthenticated,),
             url_path='me/avatar')
     def avatar(self, request):
+        """
+        Функция для эндпоинта /api/users/me/avatar/
+        """
         user = request.user
         if request.method == 'PUT' or request.method == 'PATCH':
             if 'avatar' not in request.data:
@@ -185,7 +203,6 @@ class UsersViewSet(UserViewSet):
             )
             if serializer.is_valid():
                 serializer.save()
-                print(type(serializer.data))
                 avatar_url = serializer.data.get('avatar', '')  # type: ignore
                 return Response(
                     {'avatar': avatar_url},
@@ -201,6 +218,9 @@ class UsersViewSet(UserViewSet):
 
 
 class TagViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для эндпоинта /api/tags/
+    """
     http_method_names = ['get']
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
@@ -208,6 +228,9 @@ class TagViewSet(viewsets.ModelViewSet):
 
 
 class IngredientViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet для эндпоинта /api/ingredients/
+    """
     http_method_names = ['get']
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
@@ -217,10 +240,14 @@ class IngredientViewSet(viewsets.ModelViewSet):
 
 
 class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
-    queryset = Recipe.objects.all()
+    """
+    ViewSet для эндпоинта /api/recipes/
+    """
+    queryset = Recipe.objects.all().order_by('-pub_date')
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     permission_classes = [IsAuthenticatedOrReadOnly]
+    pagination_class = RecipePagination
 
     def get_serializer_class(self):
         if self.action in ('create', 'update', 'partial_update'):
@@ -238,6 +265,10 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
             url_path='download_shopping_cart',
             )
     def download_shopping_cart(self, request):
+        """
+        Функция для эндпоинта /api/recipes/download_shopping_cart/.
+        Создает файл PDF со всеми ингредиентами добавленными в список покупок.
+        """
         user = request.user
         shopping_cart_recipes = Recipe.objects.filter(shopping_cart__user=user)
 
@@ -262,6 +293,9 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
             url_path='shopping_cart',
             )
     def shopping_cart(self, request, pk=None):
+        """
+        Функция для эндпоинта /api/recipes/{id}/shopping_cart/
+        """
         if request.method == 'POST':
             try:
                 recipe = Recipe.objects.get(id=pk)
@@ -307,6 +341,9 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageFavorite):
             url_path='get-link',
             )
     def get_link(self, request, pk=None):
+        """
+        Функция для эндпоинта /api/recipes/{id}/get-link/
+        """
         try:
             _ = Recipe.objects.get(id=pk)
         except Recipe.DoesNotExist:

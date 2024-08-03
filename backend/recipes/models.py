@@ -17,6 +17,9 @@ slug_validator = RegexValidator(
 
 
 class Tag(models.Model):
+    """
+    Модель Тэгов
+    """
     name = models.CharField('Название', max_length=200, unique=True)
     color = models.CharField('Цвет в HEX', max_length=7, unique=True)
     slug = models.SlugField(
@@ -36,6 +39,9 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
+    """
+    Модель Ингредиентов
+    """
     name = models.CharField('Название', max_length=200)
     measurement_unit = models.CharField('Единицы измерения', max_length=50)
 
@@ -48,6 +54,9 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    """
+    Модель Рецептов
+    """
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -72,12 +81,10 @@ class Recipe(models.Model):
         help_text='Время приготовления в минутах'
     )
     is_favorited = GenericRelation('Favorite')
-    # is_in_shopping_cart = models.BooleanField(
-    #     'is_in_shopping_cart',
-    #     blank=True,
-    #     null=True,
-    #     default=False
-    # )
+    pub_date = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата публикации'
+    )
 
     def __str__(self):
         return self.name
@@ -88,6 +95,9 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
+    """
+    Связная модель для Рецептов и Ингредиентов
+    """
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
     amount = models.PositiveIntegerField('Количество')
@@ -101,6 +111,9 @@ class RecipeIngredient(models.Model):
 
 
 class Favorite(models.Model):
+    """
+    Модель "Избраное"
+    """
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -127,6 +140,9 @@ class Favorite(models.Model):
 
 
 class ShoppingCart(models.Model):
+    """
+    Модель "Список покупок".
+    """
     user = models.ForeignKey(
         User,
         related_name='shopping_cart',
@@ -156,6 +172,9 @@ class ShoppingCart(models.Model):
 
 
 class Subscribe(models.Model):
+    """
+    Модель Подписки
+    """
     subscriber = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
