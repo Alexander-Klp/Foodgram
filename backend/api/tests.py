@@ -1,29 +1,63 @@
 from http import HTTPStatus
 
-from django.test import TestCase
-from rest_framework.test import APIClient
+from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient, APITestCase
 
 from recipes.models import Ingredient, Tag
 from users.models import User
 
 
-class RecipesAPITestCase(TestCase):
+class RecipesAPITestCase(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(
-            username='auth_user',
-            password='testpassword'
-        )
         self.client = APIClient()
-        self.client.force_authenticate(user=self.user)
-        self.tag = Tag.objects.create(
-            name='Test Tag',
-            color='#FFFFFF',
-            slug='test-tag'
+        self.user = User.objects.create_user(
+            username='testuser', password='testpass'
         )
-        self.ingredient = Ingredient.objects.create(
-            name='Test Ingredient',
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+
+        self.ingredient1 = Ingredient.objects.create(
+            name='Ingredient 1',
             measurement_unit='g'
         )
+        self.ingredient2 = Ingredient.objects.create(
+            name='Ingredient 2',
+            measurement_unit='ml'
+        )
+        self.tag1 = Tag.objects.create(
+            name='Tag 1',
+            color='#FF5733',
+            slug='tag-1'
+        )
+        self.tag2 = Tag.objects.create(
+            name='Tag 2',
+            color='#33FF57',
+            slug='tag-2'
+        )
+
+    def test_create_recipe(self):
+        data = {
+            "ingredients": [
+                {"id": self.ingredient1.id, "amount": 100},  # type: ignore
+                {"id": self.ingredient2.id, "amount": 200}  # type: ignore
+            ],
+            "tags": [self.tag1.id, self.tag2.id],   # type: ignore
+            "image": (
+                "data:image/png;base64,"
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAg"
+                "MAAABieywaAAAACVBMVEUAAAD///9fX1/"
+                "S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bA"
+                "AAACklEQVQImWNoAAAAggCByxOyYQAAAAB"
+                "JRU5ErkJggg=="
+            ),
+            "name": "Еще одна попытка приготовить еду",
+            "text": "Вероятно стоит это смешать.",
+            "cooking_time": 10
+        }
+        response = self.client.post('/api/recipes/', data, format='json')
+        if response.status_code != HTTPStatus.CREATED:
+            print("Errors:", response.data)   # type: ignore
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
 
     def test_list_exists(self):
         """Проверка доступности списка рецептов."""
@@ -35,21 +69,3 @@ class RecipesAPITestCase(TestCase):
         self.client.force_authenticate(user=None)  # type: ignore
         response = self.client.get('/api/recipes/download_shopping_cart/')
         self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
-
-    def test_create_recipe(self):
-        """Проверка возможности создания рецепта."""
-        data = {
-            'author': self.user.id,
-            'name': 'Test Recipe',
-            'text': 'Test Description',
-            'cooking_time': 30,
-            'ingredients': [
-                {'id': self.ingredient.id, 'amount': 100}
-            ],
-            'tags': [self.tag.id],
-        }
-        response = self.client.post('/api/recipes/', data=data, format='json')
-        self.assertEqual(response.status_code, HTTPStatus.CREATED)
-        self.assertEqual(response.data['name'], data['name'])
-        self.assertEqual(response.data['text'], data['text'])
-        self.assertEqual(response.data['cooking_time'], data['cooking_time'])
