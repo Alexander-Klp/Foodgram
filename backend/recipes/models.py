@@ -1,9 +1,13 @@
-from django.contrib.contenttypes.fields import (GenericForeignKey,
-                                                GenericRelation)
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation,
+)
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import RegexValidator
 from django.db import models
+
 from users.models import User
+
 
 slug_validator = RegexValidator(
     regex=r'^[-a-zA-Z0-9_]+$',

@@ -1,8 +1,9 @@
 from http import HTTPStatus
 
 from django.test import TestCase
-from recipes.models import Ingredient, Tag
 from rest_framework.test import APIClient
+
+from recipes.models import Ingredient, Tag
 from users.models import User
 
 
@@ -14,7 +15,11 @@ class RecipesAPITestCase(TestCase):
         )
         self.client = APIClient()
         self.client.force_authenticate(user=self.user)
-        self.tag = Tag.objects.create(name='Test Tag', color='#FFFFFF', slug='test-tag')
+        self.tag = Tag.objects.create(
+            name='Test Tag',
+            color='#FFFFFF',
+            slug='test-tag'
+        )
         self.ingredient = Ingredient.objects.create(
             name='Test Ingredient',
             measurement_unit='g'

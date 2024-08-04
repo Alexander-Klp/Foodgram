@@ -1,7 +1,11 @@
 from django.contrib.contenttypes.models import ContentType
-from django_filters.rest_framework import (BooleanFilter, CharFilter,
-                                           FilterSet,
-                                           ModelMultipleChoiceFilter)
+from django_filters.rest_framework import (
+    BooleanFilter,
+    CharFilter,
+    FilterSet,
+    ModelMultipleChoiceFilter,
+)
+
 from recipes.models import Favorite, Ingredient, Recipe, Tag
 
 

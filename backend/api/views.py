@@ -1,25 +1,40 @@
-import pyshorteners
-from api.filters import IngredientFilter, RecipeFilter
-from api.pagination import RecipePagination
-from api.permissions import AuthorOrReadOnly
-from api.serializers import (CustomUserSerializer, FavoriteRecipeSerializer,
-                             IngredientSerializer, RecipeCreateSerializer,
-                             RecipeIngredient, RecipeSerializer,
-                             RecipeSubscriptionSerializer, SubscribeSerializer,
-                             TagSerializer)
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from recipes.models import (Favorite, Ingredient, Recipe, ShoppingCart,
-                            Subscribe, Tag)
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly)
+from rest_framework.permissions import (
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from rest_framework.response import Response
+
+import pyshorteners
+from api.filters import IngredientFilter, RecipeFilter
+from api.pagination import RecipePagination
+from api.permissions import AuthorOrReadOnly
+from api.serializers import (
+    CustomUserSerializer,
+    FavoriteRecipeSerializer,
+    IngredientSerializer,
+    RecipeCreateSerializer,
+    RecipeIngredient,
+    RecipeSerializer,
+    RecipeSubscriptionSerializer,
+    SubscribeSerializer,
+    TagSerializer,
+)
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    ShoppingCart,
+    Subscribe,
+    Tag,
+)
 from users.models import User
 
 from .create_pdf import generate_shopping_cart_pdf

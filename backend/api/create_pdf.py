@@ -1,6 +1,7 @@
 import os
 
 from django.http import HttpResponse
+
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
