@@ -2,13 +2,15 @@ from django import forms
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 
-from recipes.models import (Favorite,
-                            Ingredient,
-                            Recipe,
-                            RecipeIngredient,
-                            ShoppingCart,
-                            Subscribe,
-                            Tag,)
+from recipes.models import (
+    Favorite,
+    Ingredient,
+    Recipe,
+    RecipeIngredient,
+    ShoppingCart,
+    Subscribe,
+    Tag,
+)
 
 
 @admin.register(Subscribe)
