@@ -9,7 +9,7 @@ from recipes.models import (
     RecipeIngredient,
     ShoppingCart,
     Subscribe,
-    Tag,
+    Tag
 )
 
 
