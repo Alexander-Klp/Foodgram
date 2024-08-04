@@ -32,7 +32,7 @@ class RecipesAPITestCase(TestCase):
 
     def test_download_shopping_cart(self):
         """Проверка недоступности скачивания списка покупок."""
-        self.client.force_authenticate(user=None)
+        self.client.force_authenticate(user=None)  # type: ignore
         response = self.client.get('/api/recipes/download_shopping_cart/')
         self.assertEqual(response.status_code, HTTPStatus.UNAUTHORIZED)
 
