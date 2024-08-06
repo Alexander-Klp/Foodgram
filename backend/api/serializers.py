@@ -1,11 +1,10 @@
-import base64
 from collections import Counter
 
 from django.contrib.contenttypes.models import ContentType
-from django.core.files.base import ContentFile
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
+from api.fields import Base64ImageField
 from recipes.models import (
     Favorite,
     Ingredient,
@@ -16,16 +15,6 @@ from recipes.models import (
     Tag,
 )
 from users.models import User
-
-
-class Base64ImageField(serializers.ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
-            return super().to_internal_value(data)
-        raise serializers.ValidationError('Не правильный формат изображения')
 
 
 class CustomUserCreateSerializer(UserCreateSerializer):
@@ -87,7 +76,6 @@ class TagSerializer(serializers.ModelSerializer):
     """
     Сериализатор для модели Tags.
     """
-    # color = Hex2NameColor()
 
     class Meta:
         model = Tag
@@ -104,6 +92,9 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор RecipeIngredient для просмотра рецепта
+    """
     id = serializers.PrimaryKeyRelatedField(
         source='ingredient',
         queryset=Ingredient.objects.all()
@@ -169,6 +160,9 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор RecipeIngredient для создания рецепта.
+    """
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all()
     )
@@ -186,7 +180,9 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
 
 
 class RecipeCreateSerializer(RecipeSerializer):
-
+    """
+    Сериализатор создания рецепта.
+    """
     ingredients = RecipeIngredientCreateSerializer(
         many=True,
     )
@@ -223,18 +219,14 @@ class RecipeCreateSerializer(RecipeSerializer):
         return representation
 
     def validate(self, data):
-        # Если нет ингредиентов
         if not data.get('ingredients'):
             raise serializers.ValidationError('Нет ингредиентов')
-        # Если нет тегов
         if not data.get('tags'):
             raise serializers.ValidationError('Нет тэгов')
-        # Если время готовки меньше 1
         if data['cooking_time'] < 1:
             raise serializers.ValidationError(
                 'Количество ингредиентов должно быть больше чем 1.'
             )
-        # Дубликаты игредиентов
         ingredients_data = data.get('ingredients', [])
         ingredient_ids = [
             ingredient['id'].id
@@ -244,42 +236,15 @@ class RecipeCreateSerializer(RecipeSerializer):
         for count_ingr in ingredient_counts.values():
             if count_ingr > 1:
                 raise serializers.ValidationError('Ингредиенты дублируются.')
-        # Дубликаты тегов
         tags_data = data.get('tags', [])
         tags_count = Counter(tags_data)
         for count_tags in tags_count.values():
             if count_tags > 1:
                 raise serializers.ValidationError('Тэги дублируются.')
         return data
-
-    def create(self, validated_data):
-        author = self.context['request'].user
-        tags = validated_data.pop('tags')
-        ingredients_data = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(author=author, **validated_data)
-        recipe.tags.set(tags)
-        recipe_ingredients = [
-            RecipeIngredient(
-                recipe=recipe,
-                ingredient_id=ingredient_data['id'].id,
-                amount=ingredient_data['amount']
-            )
-            for ingredient_data in ingredients_data
-        ]
-        RecipeIngredient.objects.bulk_create(recipe_ingredients)
-        return recipe
-
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.image = validated_data.get('image', instance.image)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
-        )
-
-        RecipeIngredient.objects.filter(recipe=instance).delete()
-        ingredients_data = validated_data.pop('ingredients')
-        new_ingredients = [
+    
+    def recipe_ingredients(self, instance, ingredients_data):
+        ingredients = [
             RecipeIngredient(
                 recipe=instance,
                 ingredient_id=ingredient_data['id'].id,
@@ -287,13 +252,25 @@ class RecipeCreateSerializer(RecipeSerializer):
             )
             for ingredient_data in ingredients_data
         ]
-        RecipeIngredient.objects.bulk_create(new_ingredients)
+        return RecipeIngredient.objects.bulk_create(ingredients)
+    
+    def create(self, validated_data):
+        author = self.context['request'].user
+        tags = validated_data.pop('tags')
+        ingredients_data = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(author=author, **validated_data)
+        recipe.tags.set(tags)
+        self.recipe_ingredients(recipe, ingredients_data)
+        return recipe
 
+    def update(self, instance, validated_data):
+        RecipeIngredient.objects.filter(recipe=instance).delete()
+        ingredients_data = validated_data.pop('ingredients')
+        self.recipe_ingredients(instance, ingredients_data)
         tags = validated_data.pop('tags')
         instance.tags.set(tags)
-
         instance.save()
-        return instance
+        return super().update(instance, validated_data)
 
 
 class RecipeSubscriptionSerializer(serializers.ModelSerializer):

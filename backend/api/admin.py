@@ -1,4 +1,4 @@
-from django import forms
+from django import forms  # Пока не понял в чем соль
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 

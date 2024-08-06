@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Путь для добавление ингдредиентов "create_ingredinets"
 INGREDIENTS_JSON_PATH = os.path.join(BASE_DIR, 'data', 'ingredients.json')
 
-SECRET_KEY = 'django-insecure-7wr3g12%bvah_)yyws3r-!-x+jp(dujl*!50h&@t%_zkdr#49g'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = (os.getenv("DEBUG") == 'true')
 
