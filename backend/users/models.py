@@ -19,12 +19,6 @@ class User(AbstractUser):
         blank=False,
         unique=True
     )
-    is_subscribed = models.BooleanField(
-        'Подписка',
-        blank=True,
-        null=True,
-        default=False
-    )
     avatar = models.ImageField(
         'Аватар',
         upload_to='avatar_images/',

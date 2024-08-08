@@ -13,6 +13,7 @@ from rest_framework.permissions import (
 from rest_framework.response import Response
 
 import pyshorteners
+from api.create_pdf import generate_shopping_cart_pdf
 from api.filters import IngredientFilter, RecipeFilter
 from api.pagination import RecipePagination
 from api.permissions import AuthorOrReadOnly
@@ -36,8 +37,6 @@ from recipes.models import (
     Tag,
 )
 from users.models import User
-
-from .create_pdf import generate_shopping_cart_pdf
 
 
 class ManageFavorite:
@@ -113,12 +112,11 @@ class UsersViewSet(UserViewSet):
         Функция для эндпоинта /api/users/subscriptions/
         """
         user = request.user
-        user_subscriptions = Subscribe.objects.filter(subscriber=user)
-        subscribed_users = [
-            subscription.subscribed_to for subscription in user_subscriptions
-        ]
+        user_subscriptions = User.objects.filter(
+            subscribed_to__subscriber=user
+        )
         serializer = SubscribeSerializer(
-            subscribed_users, many=True, context={'request': request}
+            user_subscriptions, many=True, context={'request': request}
         )
         page = self.paginate_queryset(serializer.data)
         if page is not None:
@@ -141,39 +139,33 @@ class UsersViewSet(UserViewSet):
                     {'error': 'Вы не можете на самого себя подписаться'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            if Subscribe.objects.filter(
+
+            subscription, created = Subscribe.objects.get_or_create(
                 subscriber=request.user,
                 subscribed_to=subscribed_to
-            ).exists():
+            )
+            if not created:
                 return Response(
                     {'error': 'У вас уже есть подписка на этого пользователя'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            user_sub, _ = Subscribe.objects.get_or_create(
-                subscriber=request.user,
-                subscribed_to=subscribed_to
-            )
             serializer = SubscribeSerializer(
                 subscribed_to,
                 context={'request': request}
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        elif request.method == 'DELETE':
-            if not Subscribe.objects.filter(
-                subscriber=request.user,
-                subscribed_to=subscribed_to
-            ).exists():
-                return Response(
-                    {'error': 'У вас нет подписки на этого пользователя'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            subscription = get_object_or_404(
-                Subscribe,
+        try:
+            subscription = Subscribe.objects.get(
                 subscriber=request.user,
                 subscribed_to=subscribed_to
             )
             subscription.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+        except Subscribe.DoesNotExist:
+            return Response(
+                {'error': 'У вас нет подписки на этого пользователя'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
     @action(detail=False,
             methods=['put', 'patch', 'delete'],
@@ -207,9 +199,8 @@ class UsersViewSet(UserViewSet):
                 serializer.errors,
                 status=status.HTTP_400_BAD_REQUEST
             )
-        elif request.method == 'DELETE':
-            user.avatar.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
+        user.avatar.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ModelViewSet):

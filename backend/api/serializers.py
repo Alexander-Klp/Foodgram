@@ -242,7 +242,7 @@ class RecipeCreateSerializer(RecipeSerializer):
             if count_tags > 1:
                 raise serializers.ValidationError('Тэги дублируются.')
         return data
-    
+
     def recipe_ingredients(self, instance, ingredients_data):
         ingredients = [
             RecipeIngredient(
@@ -253,7 +253,7 @@ class RecipeCreateSerializer(RecipeSerializer):
             for ingredient_data in ingredients_data
         ]
         return RecipeIngredient.objects.bulk_create(ingredients)
-    
+
     def create(self, validated_data):
         author = self.context['request'].user
         tags = validated_data.pop('tags')
