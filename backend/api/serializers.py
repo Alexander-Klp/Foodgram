@@ -70,6 +70,14 @@ class CustomUserSerializer(UserSerializer):
             ).exists()
         return False
 
+    def validate(self, data):
+        avatar = data.get('avatar')
+        if not avatar:
+            raise serializers.ValidationError(
+                {'avatar': 'Нужна картинка для аватара.'}
+            )
+        return data
+
 
 class TagSerializer(serializers.ModelSerializer):
     """

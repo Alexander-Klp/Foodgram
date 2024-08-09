@@ -37,13 +37,6 @@ class ManageListMixin:
             return Response(
                 {'error': 'У вас нет рецепта'},
                 status=status.HTTP_400_BAD_REQUEST)
-        if not model_class.objects.filter(
-                user=request.user,
-                recipe=recipe
-        ).exists():
-            return Response(
-                {'error': 'У вас нет рецепта'},
-                status=status.HTTP_400_BAD_REQUEST)
         obj = get_object_or_404(model_class, user=request.user, recipe=recipe)
         obj.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

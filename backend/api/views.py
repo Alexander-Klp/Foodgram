@@ -124,27 +124,18 @@ class UsersViewSet(UserViewSet):
         """
         user = request.user
         if request.method == 'PUT' or request.method == 'PATCH':
-            if 'avatar' not in request.data:
-                return Response(
-                    {'detail': 'Нужна картинка для аватара.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
             serializer = CustomUserSerializer(
                 user,
                 data=request.data,
                 partial=True,
                 context={'request': request}
             )
-            if serializer.is_valid():
-                serializer.save()
-                avatar_url = serializer.data.get('avatar', '')  # type: ignore
-                return Response(
-                    {'avatar': avatar_url},
-                    status=status.HTTP_200_OK
-                )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            avatar_url = serializer.data.get('avatar', '')  # type: ignore
             return Response(
-                serializer.errors,
-                status=status.HTTP_400_BAD_REQUEST
+                {'avatar': avatar_url},
+                status=status.HTTP_200_OK
             )
         user.avatar.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
