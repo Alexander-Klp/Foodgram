@@ -87,7 +87,7 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     def favorite_count(self):
         return self.favorites.count()  # type: ignore
 
