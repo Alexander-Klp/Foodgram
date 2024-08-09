@@ -81,17 +81,17 @@ class Recipe(models.Model):
         verbose_name='Дата публикации'
     )
 
-    def favorite_count(self):
-        return self.favorites.count()  # type: ignore
-
-    favorite_count.short_description = 'Кол-во избранных'
-
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
     def __str__(self):
         return self.name
+    
+    def favorite_count(self):
+        return self.favorites.count()  # type: ignore
+
+    favorite_count.short_description = 'Кол-во избранных'
 
 
 class RecipeIngredient(models.Model):
