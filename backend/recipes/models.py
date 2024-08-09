@@ -1,8 +1,3 @@
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey,
-    GenericRelation,
-)
-from django.contrib.contenttypes.models import ContentType
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -81,11 +76,15 @@ class Recipe(models.Model):
         'Время приготовления',
         help_text='Время приготовления в минутах'
     )
-    is_favorited = GenericRelation('Favorite')
     pub_date = models.DateTimeField(
         auto_now_add=True,
         verbose_name='Дата публикации'
     )
+
+    def favorite_count(self):
+        return self.favorites.count()  # type: ignore
+
+    favorite_count.short_description = 'Кол-во избранных'
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -119,20 +118,20 @@ class RecipeIngredient(models.Model):
 
 class Favorite(models.Model):
     """
-    Модель "Избранное"
+    Модель "Избранное".
     """
     user = models.ForeignKey(
         User,
+        related_name='favorites',
         on_delete=models.CASCADE,
-        related_name='favorites'
+        verbose_name='Пользователь'
     )
-    content_type = models.ForeignKey(
-        ContentType,
+    recipe = models.ForeignKey(
+        Recipe,
+        related_name='favorites',
         on_delete=models.CASCADE,
-        related_name='favorites'
+        verbose_name='Рецепт',
     )
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
 
     class Meta:
         verbose_name = 'Избранное'
@@ -140,10 +139,13 @@ class Favorite(models.Model):
         ordering = ['-id']
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'object_id', 'content_type'],
-                name='unique_user_content_type_object_id'
+                fields=['user', 'recipe'],
+                name='unique_user_recipe_in_favorites'
             )
         ]
+
+    def __str__(self):
+        return f'Пользователь - {self.user} рецепт - {self.recipe}'
 
 
 class ShoppingCart(models.Model):

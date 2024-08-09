@@ -1,6 +1,4 @@
-from django import forms  # Пока не понял в чем соль
 from django.contrib import admin
-from django.contrib.contenttypes.models import ContentType
 
 from recipes.models import (
     Favorite,
@@ -25,40 +23,16 @@ class ShoppingCartAdmin(admin.ModelAdmin):
     search_fields = ('recipe',)
 
 
-class FavoriteAdminForm(forms.ModelForm):
-    content_object = forms.ModelChoiceField(
-        queryset=Recipe.objects.all(), label='Recipe'
-    )
-
-    class Meta:
-        model = Favorite
-        fields = ('user', 'content_type', 'content_object')
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if self.instance and self.instance.pk:
-            self.initial['content_object'] = self.instance.content_object
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-        instance.content_type = ContentType.objects.get_for_model(
-            self.cleaned_data['content_object']
-        )
-        instance.object_id = self.cleaned_data['content_object'].id
-        if commit:
-            instance.save()
-        return instance
-
-
 @admin.register(Favorite)
 class FavoriteAdmin(admin.ModelAdmin):
-    form = FavoriteAdminForm
-    list_display = ('user', 'content_type', 'object_id', 'content_object')
-
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == 'content_type':
-            kwargs['queryset'] = ContentType.objects.filter(model='recipe')
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    """
+    Админ-панель для модели "Избранное".
+    """
+    list_display = ('user', 'recipe', '__str__')
+    list_filter = ('user', 'recipe')
+    search_fields = ('user__username', 'recipe__name')
+    ordering = ('-id',)
+    raw_id_fields = ('user', 'recipe')
 
 
 @admin.register(Tag)
@@ -83,13 +57,8 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'cooking_time', 'get_favorite_count')
+    list_display = ('name', 'author', 'cooking_time', 'favorite_count')
     search_fields = ('author__username', 'name', 'tags__name')
     list_filter = ('author', 'name', 'tags')
     inlines = [RecipeIngredientInline]
     empty_value_display = '-пусто-'
-
-    def get_favorite_count(self, obj):
-        return obj.is_favorited.count()
-
-    get_favorite_count.short_description = 'Кол-во избранных'

@@ -1,6 +1,5 @@
 from collections import Counter
 
-from django.contrib.contenttypes.models import ContentType
 from djoser.serializers import UserCreateSerializer, UserSerializer
 from rest_framework import serializers
 
@@ -129,8 +128,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if user.is_authenticated:
             return Favorite.objects.filter(
                 user=user,
-                content_type=ContentType.objects.get_for_model(Recipe),
-                object_id=obj.id
+                recipe=obj
             ).exists()
         return False
 
