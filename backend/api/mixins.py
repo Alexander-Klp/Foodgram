@@ -8,7 +8,7 @@ from recipes.models import Recipe
 class ManageListMixin:
     """
     Общий миксин для добавления и удаления рецептов в списках
-    (избранное, корзина покупок и т.д.).
+    (избранное, корзина покупок).
     """
 
     def add_to_list(self, request, model_class, serializer_class, pk):
