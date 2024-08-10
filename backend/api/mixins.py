@@ -10,7 +10,6 @@ class ManageListMixin:
     Общий миксин для добавления и удаления рецептов в списках
     (избранное, корзина покупок).
     """
-
     def add_to_list(self, request, model_class, serializer_class, pk):
         recipe = get_object_or_404(Recipe, id=pk)
         if model_class.objects.filter(
