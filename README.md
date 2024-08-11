@@ -66,9 +66,10 @@ docker compose exec backend python manage.py create_ingredients
 
 Перед запуском приложения настройте переменные окружения:
 
-- `DJANGO_SECRET_KEY` — секретный ключ Django.
-- `DB_NAME` — имя базы данных PostgreSQL.
-- `DB_USER` — пользователь базы данных.
-- `DB_PASSWORD` — пароль пользователя базы данных.
+- `POSTGRES_USER`— пользователь базы данных.
+- `POSTGRES_PASSWORD`— пароль пользователя базы данных.
+- `POSTGRES_DB`— имя базы данных PostgreSQL.
+- `SECRET_KEY` — секретный ключ Django.
 - `DB_HOST` — хост базы данных.
 - `DB_PORT` — порт для подключения к базе данных.
+- `ALLOWED_HOSTS` — список доступных хостов
