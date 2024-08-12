@@ -258,7 +258,7 @@ class RecipeViewSet(viewsets.ModelViewSet, ManageListMixin):
                 {'error': 'Несуществующий рецепт'},
                 status=status.HTTP_404_NOT_FOUND
             )
-        original_link = request.build_absolute_uri(f'/api/recipes/{pk}/')
+        original_link = request.build_absolute_uri(f'/recipes/{pk}/')
         s = pyshorteners.Shortener()
         short_link = s.tinyurl.short(original_link)
         return Response({'short-link': short_link}, status=status.HTTP_200_OK)
