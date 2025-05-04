@@ -1,4 +1,4 @@
-# RecipeHub - веб-сервис для обмена рецептами
+# Foodgram - веб-сервис для обмена рецептами
 
 <https://foodgram.serveftp.com/>
 
